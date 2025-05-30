@@ -12,18 +12,52 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.bleroomstatus",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "このアプリはビーコンとの通信にBluetoothを使用して、在室状況を自動で管理します。",
+        "NSBluetoothPeripheralUsageDescription": "このアプリはビーコンデバイスとの通信にBluetoothを使用します。",
+        "NSLocationWhenInUseUsageDescription": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "このアプリはバックグラウンドでもBLEデバイスを監視するために位置情報を使用します。",
+
+        "UIBackgroundModes": ["bluetooth-central", "bluetooth-peripheral"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": ["peripheral", "central"],
+          "bluetoothAlwaysPermission": "このアプリはビーコンとの通信にBluetoothを使用します。"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。"
+        }
+      ]
+    ]
   }
 }
