@@ -8,19 +8,19 @@ interface DeviceInfoProps {
 
 export const DeviceInfo: React.FC<DeviceInfoProps> = ({ device }) => {
   const formatConnectionTime = (date: Date): string => {
-    return date.toLocaleTimeString("ja-JP");
+    return date.toLocaleString("ja-JP");
   };
 
   const getSignalStrengthIcon = (rssi?: number): string => {
-    if (!rssi) return "📶";
-    if (rssi > -50) return "📶";
-    if (rssi > -70) return "📶";
-    if (rssi > -80) return "📶";
-    return "📶";
+    if (rssi === undefined || rssi === null) return "❓";
+    if (rssi > -50) return "📶"; // 非常に強い
+    if (rssi > -70) return "📡"; // 普通
+    if (rssi > -80) return "▲"; // 弱い
+    return "❌"; // 非常に弱い
   };
 
   const getSignalStrengthText = (rssi?: number): string => {
-    if (!rssi) return "不明";
+    if (rssi === undefined || rssi === null) return "不明";
     if (rssi > -50) return "強い";
     if (rssi > -70) return "普通";
     if (rssi > -80) return "弱い";

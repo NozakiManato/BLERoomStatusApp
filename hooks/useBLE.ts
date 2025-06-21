@@ -15,6 +15,7 @@ import type {
   ScanStatus,
 } from "../types";
 import type { AppConfig } from "../constants";
+import { BLE_CONSTANTS } from "../constants";
 import { ApiService } from "../services";
 
 interface UseBLEProps {
@@ -127,7 +128,7 @@ export const useBLE = ({
     console.log("🔍 BLEスキャンを開始...");
 
     bleManager.startDeviceScan(
-      null,
+      config.serviceUUIDs,
       null,
       (error, device: BLEDevice | null) => {
         if (error) {
@@ -149,11 +150,15 @@ export const useBLE = ({
             return exists ? prev : [...prev, deviceInfo];
           });
 
-          // ビーコン判定
-          const isTargetBeacon = device.name.toLowerCase().includes("beacon");
+          // サービスUUIDで判定
+          const hasTargetService =
+            device.serviceUUIDs &&
+            device.serviceUUIDs.some((uuid) =>
+              config.serviceUUIDs.includes(uuid)
+            );
 
-          if (isTargetBeacon) {
-            console.log("🎯 ターゲットビーコン発見:", device.name);
+          if (hasTargetService) {
+            console.log("🎯 ターゲットサービスUUIDデバイス発見:", device.name);
             bleManager.stopDeviceScan();
             setScanStatus("スキャン停止");
             connectToDevice(deviceInfo);
@@ -166,7 +171,7 @@ export const useBLE = ({
       bleManager.stopDeviceScan();
       setScanStatus("スキャン停止");
       console.log("⏰ スキャンタイムアウト");
-    }, config.scanTimeout);
+    }, BLE_CONSTANTS.SCAN_TIMEOUT);
   }, [permissionsGranted, scanStatus, bleManager, config]);
 
   const connectToDevice = useCallback(
@@ -195,7 +200,7 @@ export const useBLE = ({
 
           reconnectTimeoutRef.current = setTimeout(() => {
             if (permissionsGranted) startScanning();
-          }, config.reconnectDelay);
+          }, BLE_CONSTANTS.RECONNECT_DELAY);
         });
       } catch (error) {
         console.error("❌ 接続エラー:", error);
@@ -203,7 +208,7 @@ export const useBLE = ({
 
         reconnectTimeoutRef.current = setTimeout(() => {
           if (permissionsGranted) startScanning();
-        }, config.reconnectDelay);
+        }, BLE_CONSTANTS.RECONNECT_DELAY);
       }
     },
     [bleManager, sendEnterRoomAPI, sendExitRoomAPI, permissionsGranted, config]

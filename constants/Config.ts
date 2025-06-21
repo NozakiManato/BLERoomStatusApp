@@ -1,5 +1,5 @@
 export interface AppConfig {
-  beaconUUID: string;
+  serviceUUIDs: string[];
   apiBaseURL: string;
   userId: string;
   scanTimeout: number;
@@ -7,7 +7,7 @@ export interface AppConfig {
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
-  beaconUUID: "550e8400-e29b-41d4-a716-446655440000",
+  serviceUUIDs: ["27ADC9CA-35EB-465A-9154-B8FF9076F3E8"],
   apiBaseURL: "https://www.kyutech-4lab.com/localabo/attendance",
   userId: "cm9e2syr60000jo04miuh46mp",
   scanTimeout: 10000,

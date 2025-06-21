@@ -1,18 +1,16 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { DEFAULT_CONFIG } from "./constants";
 import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
-import {
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text } from "react-native";
+import { SettingsScreen } from "./components/SettingsScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const App: React.FC = () => {
-  const config = useMemo(() => DEFAULT_CONFIG, []);
+  const [showSettings, setShowSettings] = useState(false);
+  const [config, setConfig] = useState(() => DEFAULT_CONFIG);
+  const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const {
     permissionsGranted,
     isLoading,
@@ -20,16 +18,37 @@ const App: React.FC = () => {
     checkPermissions,
     bleManager,
   } = usePermissions();
-  const {
-    isConnected,
-    connectedDevice,
-    connectionStatus,
-    scanStatus,
-    discoveredDevices,
-    restartScanning,
-  } = useBLE({ config, permissionsGranted, bleManager });
+  const { isConnected, connectedDevice, connectionStatus, scanStatus } = useBLE(
+    { config, permissionsGranted, bleManager }
+  );
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
+
+  useEffect(() => {
+    (async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        setIsFirstLaunch(true);
+      } else {
+        setConfig((prev) => ({
+          ...prev,
+          userId,
+          serviceUUIDs: DEFAULT_CONFIG.serviceUUIDs,
+        }));
+        setIsFirstLaunch(false);
+      }
+    })();
+  }, []);
+
+  const handleSaveSettings = (userId: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      userId,
+      serviceUUIDs: DEFAULT_CONFIG.serviceUUIDs,
+    }));
+    setIsFirstLaunch(false);
+    setShowSettings(false);
+  };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -60,11 +79,25 @@ const App: React.FC = () => {
     );
   }
 
+  if (isFirstLaunch || showSettings) {
+    return <SettingsScreen onSave={handleSaveSettings} />;
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <Text style={styles.title}>🏠 BLE Room Status Monitor</Text>
-
+        <Text
+          style={{
+            color: "#2196F3",
+            textAlign: "right",
+            marginBottom: 10,
+            textDecorationLine: "underline",
+          }}
+          onPress={() => setShowSettings(true)}
+        >
+          ⚙️ 設定
+        </Text>
         <StatusCard
           label="接続状態"
           value={connectionStatus}
@@ -83,7 +116,6 @@ const App: React.FC = () => {
           color={getStatusColor(scanStatus)}
           icon="🔍"
         />
-
         {connectedDevice && <DeviceInfo device={connectedDevice} />}
       </ScrollView>
     </SafeAreaView>

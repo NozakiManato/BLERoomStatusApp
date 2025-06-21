@@ -15,18 +15,27 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.bleroomstatus",
+      "bundleIdentifier": "com.kyutech4lab.bleroomstatus",
       "buildNumber": "1.0.0",
+      "icon": "./assets/apple-icon.png",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "このアプリはビーコンとの通信にBluetoothを使用して、在室状況を自動で管理します。",
         "NSBluetoothPeripheralUsageDescription": "このアプリはビーコンデバイスとの通信にBluetoothを使用します。",
         "NSLocationWhenInUseUsageDescription": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "このアプリはバックグラウンドでもBLEデバイスを監視するために位置情報を使用します。",
-
-        "UIBackgroundModes": ["bluetooth-central", "bluetooth-peripheral"]
+        "UIBackgroundModes": [
+          "bluetooth-central",
+          "bluetooth-peripheral",
+          "bluetooth-central",
+          "bluetooth-peripheral"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.kyutech4lab.bleroomstatus",
+      "version": "1.0.0",
+      "icon": "./assets/apple-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -41,7 +50,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.ico"
     },
     "plugins": [
       [
@@ -58,6 +67,11 @@
           "locationAlwaysAndWhenInUsePermission": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b2a821fa-5a6e-4f4c-84bc-84cf4f4f6214"
+      }
+    }
   }
 }
