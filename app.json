@@ -4,11 +4,11 @@
     "slug": "BLERoomStatusApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/ble_icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/kyutech_logo.jpg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.kyutech4lab.bleroomstatus",
       "buildNumber": "1.0.0",
-      "icon": "./assets/apple-icon.png",
+      "icon": "./assets/ble_icon.png",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "このアプリはビーコンとの通信にBluetoothを使用して、在室状況を自動で管理します。",
         "NSBluetoothPeripheralUsageDescription": "このアプリはビーコンデバイスとの通信にBluetoothを使用します。",
@@ -35,9 +35,9 @@
     "android": {
       "package": "com.kyutech4lab.bleroomstatus",
       "version": "1.0.0",
-      "icon": "./assets/apple-icon.png",
+      "icon": "./assets/ble_icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/kyutech_logo.jpg",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
