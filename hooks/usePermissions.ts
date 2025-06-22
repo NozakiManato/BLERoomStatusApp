@@ -30,12 +30,26 @@ export const usePermissions = () => {
     }
   };
 
+  const waitForBluetoothOn = async (): Promise<State> => {
+    let state = await bleManager.state();
+    const maxAttempts = 5;
+    let attempts = 0;
+
+    while (state !== State.PoweredOn && attempts < maxAttempts) {
+      console.log(`🔄 Bluetooth 状態確認中: ${state}`);
+      await new Promise((r) => setTimeout(r, 500));
+      state = await bleManager.state();
+      attempts++;
+    }
+
+    return state;
+  };
+
   const requestPermissions = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       console.log("🔐 権限をリクエスト中...");
 
-      // 位置情報権限をリクエスト
       const { status: locationStatus } =
         await Location.requestForegroundPermissionsAsync();
 
@@ -51,7 +65,6 @@ export const usePermissions = () => {
         return false;
       }
 
-      //バックグラウンド位置情報権限をリクエスト(iOS)
       if (Platform.OS === "ios") {
         const { status: backgroundLocationStatus } =
           await Location.requestBackgroundPermissionsAsync();
@@ -65,16 +78,16 @@ export const usePermissions = () => {
         }
       }
 
-      //Bluetooth権限の確認
-      const bluetoothState: State = await bleManager.state();
+      const bluetoothState = await waitForBluetoothOn();
 
-      if (bluetoothState !== "PoweredOn") {
+      if (bluetoothState !== State.PoweredOn) {
         Alert.alert("Bluetoothエラー", "Bluetoothを有効にしてください。", [
           { text: "キャンセル", style: "cancel" },
           { text: "設定を開く", onPress: () => Linking.openSettings() },
         ]);
         return false;
       }
+
       setPermissionsGranted(true);
       console.log("✅ すべての権限が許可されました");
       return true;
@@ -93,14 +106,18 @@ export const usePermissions = () => {
         await Location.getForegroundPermissionsAsync();
       const { status: backgroundLocationStatus } =
         await Location.getBackgroundPermissionsAsync();
-      const bluetoothState: State = await bleManager.state();
+      const bluetoothState = await waitForBluetoothOn();
 
       const permissionStatus: PermissionStatus = {
         location: locationStatus === "granted",
         backgroundLocation: backgroundLocationStatus === "granted",
         bluetooth: bluetoothState === "PoweredOn",
-        all: locationStatus === "granted" && bluetoothState === "PoweredOn",
+        all:
+          locationStatus === "granted" &&
+          bluetoothState === "PoweredOn" &&
+          backgroundLocationStatus === "granted", // ←必要に応じて変更可
       };
+
       setPermissionsGranted(permissionStatus.all);
       return permissionStatus;
     } catch (error) {
@@ -113,6 +130,7 @@ export const usePermissions = () => {
       };
     }
   };
+
   return {
     permissionsGranted,
     isLoading,
