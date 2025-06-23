@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG } from "./constants";
 import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
-import { SafeAreaView, ScrollView, StyleSheet, Text } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SettingsScreen } from "./components/SettingsScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -18,7 +18,7 @@ const App: React.FC = () => {
     checkPermissions,
     bleManager,
   } = usePermissions();
-  const { isConnected, connectedDevice, connectionStatus, scanStatus } = useBLE(
+  const { isConnected, connectedDevice, connectionStatus, scanStatus, startScanning, disconnect } = useBLE(
     { config, permissionsGranted, bleManager }
   );
 
@@ -116,6 +116,20 @@ const App: React.FC = () => {
           color={getStatusColor(scanStatus)}
           icon="🔍"
         />
+
+        {/* 接続・切断ボタン */}
+        <View style={{ marginBottom: 20 }}>
+          {isConnected ? (
+            <TouchableOpacity style={styles.button} onPress={disconnect}>
+              <Text style={styles.buttonText}>切断</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={startScanning}>
+              <Text style={styles.buttonText}>接続</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {connectedDevice && <DeviceInfo device={connectedDevice} />}
       </ScrollView>
     </SafeAreaView>
