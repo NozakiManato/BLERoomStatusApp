@@ -3,9 +3,10 @@ import { DEFAULT_CONFIG } from "./constants";
 import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Card, Provider as PaperProvider, Text, Title } from "react-native-paper";
+import { SafeAreaView, ScrollView, StyleSheet, View, Text } from "react-native";
+import { Appbar, Button, Provider as PaperProvider } from "react-native-paper";
 import { SettingsScreen } from "./components/SettingsScreen";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const App: React.FC = () => {
@@ -19,9 +20,14 @@ const App: React.FC = () => {
     checkPermissions,
     bleManager,
   } = usePermissions();
-  const { isConnected, connectedDevice, connectionStatus, scanStatus, startScanning, disconnect } = useBLE(
-    { config, permissionsGranted, bleManager }
-  );
+  const {
+    isConnected,
+    connectedDevice,
+    connectionStatus,
+    scanStatus,
+    startScanning,
+    disconnect,
+  } = useBLE({ config, permissionsGranted, bleManager });
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
 
@@ -76,6 +82,9 @@ const App: React.FC = () => {
         isLoading={isLoading}
         onRequestPermissions={requestPermissions}
         onCheckPermissions={checkPermissions}
+        permissionsGranted={permissionsGranted}
+        connectionStatus={connectionStatus}
+        scanStatus={scanStatus}
       />
     );
   }
@@ -85,49 +94,71 @@ const App: React.FC = () => {
   }
 
   return (
-    <PaperProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Appbar.Header>
-          <Appbar.Content title="BLE Room Status" />
-          <Appbar.Action icon="cog" onPress={() => setShowSettings(true)} />
-        </Appbar.Header>
-        <ScrollView style={styles.container}>
-          <StatusCard
-            label="接続状態"
-            value={connectionStatus}
-            color={getStatusColor(connectionStatus)}
-            icon="link-variant"
-          />
-          <StatusCard
-            label="在室状態"
-            value={roomStatus}
-            color={getStatusColor(roomStatus)}
-            icon="home-account"
-          />
-          <StatusCard
-            label="スキャン状態"
-            value={scanStatus}
-            color={getStatusColor(scanStatus)}
-            icon="bluetooth-searching"
-          />
+    <SafeAreaProvider>
+      <PaperProvider>
+        <SafeAreaView style={{ flex: 1 }}>
+          <Appbar.Header>
+            <Appbar.Content title="BLE Room Status" />
+            <Appbar.Action icon="cog" onPress={() => setShowSettings(true)} />
+          </Appbar.Header>
+          <ScrollView style={styles.container}>
+            <StatusCard
+              label="接続状態"
+              value={connectionStatus}
+              color={getStatusColor(connectionStatus)}
+              icon="link-variant"
+            />
+            <StatusCard
+              label="在室状態"
+              value={roomStatus}
+              color={getStatusColor(roomStatus)}
+              icon="home-account"
+            />
+            <StatusCard
+              label="スキャン状態"
+              value={scanStatus}
+              color={getStatusColor(scanStatus)}
+              icon="bluetooth-searching"
+            />
+            {/* スキャン状態の詳細表示 */}
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontSize: 14, color: "#333" }}>
+                スキャン状態詳細: {scanStatus}
+              </Text>
+            </View>
+            <StatusCard
+              label="権限"
+              value={permissionsGranted ? "許可済み" : "未許可"}
+              color={permissionsGranted ? "#4CAF50" : "#F44336"}
+              icon="shield-check"
+            />
 
-          {/* 接続・切断ボタン */}
-          <View style={{ marginBottom: 20 }}>
-            {isConnected ? (
-              <Button mode="contained" onPress={disconnect} style={styles.button}>
-                切断
-              </Button>
-            ) : (
-              <Button mode="contained" onPress={startScanning} style={styles.button}>
-                接続
-              </Button>
-            )}
-          </View>
+            {/* 接続・切断ボタン */}
+            <View style={{ marginBottom: 20 }}>
+              {isConnected ? (
+                <Button
+                  mode="contained"
+                  onPress={disconnect}
+                  style={styles.button}
+                >
+                  切断
+                </Button>
+              ) : (
+                <Button
+                  mode="contained"
+                  onPress={startScanning}
+                  style={styles.button}
+                >
+                  接続
+                </Button>
+              )}
+            </View>
 
-          {connectedDevice && <DeviceInfo device={connectedDevice} />}
-        </ScrollView>
-      </SafeAreaView>
-    </PaperProvider>
+            {connectedDevice && <DeviceInfo device={connectedDevice} />}
+          </ScrollView>
+        </SafeAreaView>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 };
 

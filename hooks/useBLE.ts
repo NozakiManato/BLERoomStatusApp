@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import {
@@ -164,7 +162,7 @@ export const useBLE = ({
   );
 
   const withRetry = useCallback(
-    async <T>(
+    async (
       apiCall: () => Promise<{ success: boolean; message?: string }>
     ): Promise<void> => {
       let attempts = 0;
@@ -298,5 +296,6 @@ export const useBLE = ({
     startScanning,
     restartScanning,
     disconnect,
+    permissionsGranted,
   };
 };

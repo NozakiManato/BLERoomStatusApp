@@ -13,12 +13,18 @@ interface PermissionScreenProps {
   isLoading: boolean;
   onRequestPermissions: () => Promise<boolean>;
   onCheckPermissions: () => Promise<PermissionStatus>;
+  permissionsGranted?: boolean;
+  connectionStatus?: string;
+  scanStatus?: string;
 }
 
 export const PermissionScreen: React.FC<PermissionScreenProps> = ({
   isLoading,
   onRequestPermissions,
   onCheckPermissions,
+  permissionsGranted,
+  connectionStatus,
+  scanStatus,
 }) => {
   const handleCheckPermissions = async (): Promise<void> => {
     const status = await onCheckPermissions();
@@ -54,12 +60,34 @@ export const PermissionScreen: React.FC<PermissionScreenProps> = ({
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#2196F3" />
         <Text style={styles.loadingText}>権限を確認中...</Text>
+        <Text style={{ marginTop: 10 }}>
+          権限:{" "}
+          {permissionsGranted === undefined
+            ? "-"
+            : permissionsGranted
+            ? "許可済み"
+            : "未許可"}
+        </Text>
+        <Text>BLE接続状態: {connectionStatus ?? "-"}</Text>
+        <Text>スキャン状態: {scanStatus ?? "-"}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <View style={{ marginBottom: 16 }}>
+        <Text>
+          権限:{" "}
+          {permissionsGranted === undefined
+            ? "-"
+            : permissionsGranted
+            ? "許可済み"
+            : "未許可"}
+        </Text>
+        <Text>BLE接続状態: {connectionStatus ?? "-"}</Text>
+        <Text>スキャン状態: {scanStatus ?? "-"}</Text>
+      </View>
       <Text style={styles.title}>🔐 BLE Room Status Monitor</Text>
       <View style={styles.permissionContainer}>
         <Text style={styles.permissionTitle}>権限設定が必要です</Text>
