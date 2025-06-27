@@ -3,7 +3,8 @@ import { DEFAULT_CONFIG } from "./constants";
 import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { Appbar, Button, Card, Provider as PaperProvider, Text, Title } from "react-native-paper";
 import { SettingsScreen } from "./components/SettingsScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -84,55 +85,49 @@ const App: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>🏠 BLE Room Status Monitor</Text>
-        <Text
-          style={{
-            color: "#2196F3",
-            textAlign: "right",
-            marginBottom: 10,
-            textDecorationLine: "underline",
-          }}
-          onPress={() => setShowSettings(true)}
-        >
-          ⚙️ 設定
-        </Text>
-        <StatusCard
-          label="接続状態"
-          value={connectionStatus}
-          color={getStatusColor(connectionStatus)}
-          icon="🔗"
-        />
-        <StatusCard
-          label="在室状態"
-          value={roomStatus}
-          color={getStatusColor(roomStatus)}
-          icon="🏠"
-        />
-        <StatusCard
-          label="スキャン状態"
-          value={scanStatus}
-          color={getStatusColor(scanStatus)}
-          icon="🔍"
-        />
+    <PaperProvider>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Appbar.Header>
+          <Appbar.Content title="BLE Room Status" />
+          <Appbar.Action icon="cog" onPress={() => setShowSettings(true)} />
+        </Appbar.Header>
+        <ScrollView style={styles.container}>
+          <StatusCard
+            label="接続状態"
+            value={connectionStatus}
+            color={getStatusColor(connectionStatus)}
+            icon="link-variant"
+          />
+          <StatusCard
+            label="在室状態"
+            value={roomStatus}
+            color={getStatusColor(roomStatus)}
+            icon="home-account"
+          />
+          <StatusCard
+            label="スキャン状態"
+            value={scanStatus}
+            color={getStatusColor(scanStatus)}
+            icon="bluetooth-searching"
+          />
 
-        {/* 接続・切断ボタン */}
-        <View style={{ marginBottom: 20 }}>
-          {isConnected ? (
-            <TouchableOpacity style={styles.button} onPress={disconnect}>
-              <Text style={styles.buttonText}>切断</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={startScanning}>
-              <Text style={styles.buttonText}>接続</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          {/* 接続・切断ボタン */}
+          <View style={{ marginBottom: 20 }}>
+            {isConnected ? (
+              <Button mode="contained" onPress={disconnect} style={styles.button}>
+                切断
+              </Button>
+            ) : (
+              <Button mode="contained" onPress={startScanning} style={styles.button}>
+                接続
+              </Button>
+            )}
+          </View>
 
-        {connectedDevice && <DeviceInfo device={connectedDevice} />}
-      </ScrollView>
-    </SafeAreaView>
+          {connectedDevice && <DeviceInfo device={connectedDevice} />}
+        </ScrollView>
+      </SafeAreaView>
+    </PaperProvider>
   );
 };
 
@@ -142,12 +137,8 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f5f5",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 30,
-    color: "#333",
+  button: {
+    marginTop: 16,
   },
   discoveredContainer: {
     backgroundColor: "white",
@@ -190,18 +181,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginTop: 8,
-  },
-  button: {
-    backgroundColor: "#2196F3",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: "white",
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   infoContainer: {
     backgroundColor: "white",
