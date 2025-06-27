@@ -68,7 +68,7 @@ export const useBLE = ({
     }
 
     return state;
-  }
+  };
 
   const startScanning = useCallback(() => {
     if (!permissionsGranted || scanStatus === "スキャン中") return;
@@ -100,15 +100,9 @@ export const useBLE = ({
             return exists ? prev : [...prev, deviceInfo];
           });
 
-          // サービスUUIDで判定
-          const hasTargetService =
-            device.serviceUUIDs &&
-            device.serviceUUIDs.some((uuid) =>
-              config.serviceUUIDs.includes(uuid)
-            );
-
-          if (hasTargetService) {
-            console.log("🎯 ターゲットサービスUUIDデバイス発見:", device.name);
+          // デバイス名で判定
+          if (device.name === config.targetDeviceName) {
+            console.log("🎯 ターゲットデバイス発見:", device.name);
             bleManager.stopDeviceScan();
             setScanStatus("スキャン停止");
             connectToDevice(deviceInfo);
@@ -124,36 +118,38 @@ export const useBLE = ({
     }, BLE_CONSTANTS.SCAN_TIMEOUT);
   }, [permissionsGranted, scanStatus, bleManager, config]);
 
-  const initializeBLE = useCallback( () => {
-
+  const initializeBLE = useCallback(() => {
     const setup = async () => {
       const state = await waitForBluetoothOn();
 
-      if(state === State.PoweredOn) {
+      if (state === State.PoweredOn) {
         startScanning();
       } else {
-        console.warn(("⚠️ Bluetooth が PoweredOn になりませんでした"));
-        Alert.alert("Bluetooth未接続", "Bluetoothを有効にしてください。")
+        console.warn("⚠️ Bluetooth が PoweredOn になりませんでした");
+        Alert.alert("Bluetooth未接続", "Bluetoothを有効にしてください。");
       }
-    stateSubscriptionRef.current = bleManager.onStateChange((state: State) => {
-      console.log("📶 BLE状態変更:", state);
+      stateSubscriptionRef.current = bleManager.onStateChange(
+        (state: State) => {
+          console.log("📶 BLE状態変更:", state);
 
-      switch (state) {
-        case "PoweredOn":
-          startScanning();
-          break;
-        case "PoweredOff":
-          Alert.alert("Bluetooth無効", "Bluetoothを有効にしてください。");
-          setScanStatus("エラー");
-          break;
-        default:
-          setScanStatus("エラー");
-          break;
-      }
-    }, true);
-  }
+          switch (state) {
+            case "PoweredOn":
+              startScanning();
+              break;
+            case "PoweredOff":
+              Alert.alert("Bluetooth無効", "Bluetoothを有効にしてください。");
+              setScanStatus("エラー");
+              break;
+            default:
+              setScanStatus("エラー");
+              break;
+          }
+        },
+        true
+      );
+    };
 
-  setup();
+    setup();
   }, [bleManager, startScanning]);
 
   const createAPIData = useCallback(
@@ -167,41 +163,71 @@ export const useBLE = ({
     [config.userId]
   );
 
+  const withRetry = useCallback(
+    async <T>(
+      apiCall: () => Promise<{ success: boolean; message?: string }>
+    ): Promise<void> => {
+      let attempts = 0;
+      while (attempts < BLE_CONSTANTS.MAX_RETRY_ATTEMPTS) {
+        try {
+          const response = await apiCall();
+          if (response.success) {
+            console.log(`✅ API呼び出し成功 (試行 ${attempts + 1}回目)`);
+            return;
+          } else {
+            console.warn(
+              `⚠️ API呼び出し失敗: ${response.message} (試行 ${
+                attempts + 1
+              }回目)`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `❌ API呼び出しで例外発生 (試行 ${attempts + 1}回目):`,
+            error
+          );
+        }
+        attempts++;
+        if (attempts < BLE_CONSTANTS.MAX_RETRY_ATTEMPTS) {
+          console.log(`${BLE_CONSTANTS.API_RETRY_DELAY}ms後に再試行します...`);
+          await new Promise((resolve) =>
+            setTimeout(resolve, BLE_CONSTANTS.API_RETRY_DELAY)
+          );
+        }
+      }
+      console.error(
+        `❌ API呼び出しが${BLE_CONSTANTS.MAX_RETRY_ATTEMPTS}回失敗しました。`
+      );
+      Alert.alert("APIエラー", "サーバーへのデータ送信に失敗しました。");
+    },
+    []
+  );
+
   const sendEnterRoomAPI = useCallback(
     async (device: ConnectedDevice): Promise<void> => {
-      try {
-        const apiData = createAPIData(device);
-        const response = await apiService.current.sendEnterRoom(apiData);
-        if (response.success) {
-          console.log("✅ 在室API送信成功");
-        } else {
-          console.error("❌ 在室API送信失敗:", response.message);
-        }
-      } catch (error) {
-        console.error("❌ 在室API送信エラー:", error);
-      }
+      const apiData = createAPIData(device);
+      await withRetry(() =>
+        apiService.current.sendEnterRoom(apiData).then((res) => ({
+          success: res.success,
+          message: res.message ?? "",
+        }))
+      );
     },
-    [createAPIData]
+    [createAPIData, withRetry]
   );
 
   const sendExitRoomAPI = useCallback(
     async (device?: ConnectedDevice): Promise<void> => {
-      try {
-        const apiData = createAPIData(device);
-        const response = await apiService.current.sendExitRoom(apiData);
-        if (response.success) {
-          console.log("✅ 退室API送信成功");
-        } else {
-          console.error("❌ 退室API送信失敗:", response.message);
-        }
-      } catch (error) {
-        console.error("❌ 退室API送信エラー:", error);
-      }
+      const apiData = createAPIData(device);
+      await withRetry(() =>
+        apiService.current.sendExitRoom(apiData).then((res) => ({
+          success: res.success,
+          message: res.message ?? "",
+        }))
+      );
     },
-    [createAPIData]
+    [createAPIData, withRetry]
   );
-
- 
 
   const connectToDevice = useCallback(
     async (device: Device): Promise<void> => {
