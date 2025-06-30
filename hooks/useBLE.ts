@@ -92,12 +92,8 @@ export const useBLE = ({
   };
 
   const createAPIData = useCallback(
-    (device?: ConnectedDevice) => ({
+    () => ({
       userId: config.userId,
-      timestamp: new Date().toISOString(),
-      deviceId: device?.id,
-      deviceName: device?.name || undefined,
-      rssi: device?.rssi,
     }),
     [config.userId]
   );
@@ -142,31 +138,25 @@ export const useBLE = ({
     []
   );
 
-  const sendEnterRoomAPI = useCallback(
-    async (device: ConnectedDevice): Promise<void> => {
-      const apiData = createAPIData(device);
-      await withRetry(() =>
-        apiService.current.sendEnterRoom(apiData).then((res) => ({
-          success: res.success,
-          message: res.message ?? "",
-        }))
-      );
-    },
-    [createAPIData, withRetry]
-  );
+  const sendEnterRoomAPI = useCallback(async (): Promise<void> => {
+    const apiData = createAPIData();
+    await withRetry(() =>
+      apiService.current.sendEnterRoom(apiData).then((res) => ({
+        success: res.success,
+        message: res.message ?? "",
+      }))
+    );
+  }, [createAPIData, withRetry]);
 
-  const sendExitRoomAPI = useCallback(
-    async (device?: ConnectedDevice): Promise<void> => {
-      const apiData = createAPIData(device);
-      await withRetry(() =>
-        apiService.current.sendExitRoom(apiData).then((res) => ({
-          success: res.success,
-          message: res.message ?? "",
-        }))
-      );
-    },
-    [createAPIData, withRetry]
-  );
+  const sendExitRoomAPI = useCallback(async (): Promise<void> => {
+    const apiData = createAPIData();
+    await withRetry(() =>
+      apiService.current.sendExitRoom(apiData).then((res) => ({
+        success: res.success,
+        message: res.message ?? "",
+      }))
+    );
+  }, [createAPIData, withRetry]);
 
   const connectToDevice = useCallback(
     async (device: Device): Promise<void> => {
@@ -194,6 +184,11 @@ export const useBLE = ({
           timeout: BLE_CONSTANTS.CONNECTION_TIMEOUT,
         });
 
+        // サービス・キャラクタリスティックを発見
+        await bleDevice.discoverAllServicesAndCharacteristics();
+        // スキャンを停止
+        bleManager.stopDeviceScan();
+
         isConnectingRef.current = false; // ★ 接続成功したのでフラグを下ろす
         console.log("✅ デバイス接続成功:", device.name);
 
@@ -209,7 +204,7 @@ export const useBLE = ({
 
         await AsyncStorage.setItem("lastConnectedDeviceId", device.id);
         setLastConnectedDeviceId(device.id);
-        await sendEnterRoomAPI(connectedDeviceInfo);
+        await sendEnterRoomAPI();
 
         // ★ 切断リスナーを登録し、その購読をrefに保存
         disconnectSubscriptionRef.current = bleDevice.onDisconnected(
@@ -227,7 +222,7 @@ export const useBLE = ({
             setIsConnected(false);
             setConnectedDevice(null);
             setConnectionStatus("未接続");
-            sendExitRoomAPI(connectedDeviceInfo);
+            sendExitRoomAPI();
 
             if (disconnectSubscriptionRef.current) {
               disconnectSubscriptionRef.current.remove();
@@ -488,7 +483,7 @@ export const useBLE = ({
         setIsConnected(false);
         setConnectedDevice(null);
         await bleManager.cancelDeviceConnection(connectedDevice.id);
-        await sendExitRoomAPI(connectedDevice);
+        await sendExitRoomAPI();
         cleanup();
         console.log("✅ 手動切断完了");
       } catch (error) {
