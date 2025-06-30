@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kyutech4lab.bleroomstatus",
@@ -24,6 +26,10 @@
         "NSLocationWhenInUseUsageDescription": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "このアプリはバックグラウンドでもBLEデバイスを監視するために位置情報を使用します。",
         "UIBackgroundModes": [
+          "bluetooth-central",
+          "bluetooth-peripheral",
+          "bluetooth-central",
+          "bluetooth-peripheral",
           "bluetooth-central",
           "bluetooth-peripheral",
           "bluetooth-central",
@@ -46,6 +52,12 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN"
       ]
     },
@@ -57,7 +69,10 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": ["peripheral", "central"],
+          "modes": [
+            "peripheral",
+            "central"
+          ],
           "bluetoothAlwaysPermission": "このアプリはビーコンとの通信にBluetoothを使用します。"
         }
       ],
@@ -72,6 +87,12 @@
       "eas": {
         "projectId": "b2a821fa-5a6e-4f4c-84bc-84cf4f4f6214"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b2a821fa-5a6e-4f4c-84bc-84cf4f4f6214"
     }
   }
 }

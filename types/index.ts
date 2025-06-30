@@ -19,7 +19,7 @@ export interface PermissionStatus {
   all: boolean;
 }
 export type RoomStatus = "在室中" | "退室中";
-export type ConnectionStatus = "接続中" | "未接続" | "接続試行中";
+export type ConnectionStatus = "接続中" | "未接続" | "接続試行中" | "エラー";
 export type ScanStatus =
   | "スキャン停止"
   | "スキャン中"

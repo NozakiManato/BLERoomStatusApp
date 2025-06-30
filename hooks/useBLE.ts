@@ -199,7 +199,7 @@ export const useBLE = ({
         });
       } catch (error) {
         console.error("❌ 接続エラー:", error);
-        setConnectionStatus("未接続");
+        setConnectionStatus("エラー");
 
         reconnectTimeoutRef.current = setTimeout(() => {
           if (permissionsGranted) {
@@ -228,6 +228,7 @@ export const useBLE = ({
 
       setScanStatus("スキャン中");
       setDiscoveredDevices([]);
+      discoveredDevicesRef.current = [];
       console.log("🔍 BLEスキャンを開始...");
       console.log("🎯 ターゲットデバイス名:", config.targetDeviceName);
       console.log("🔧 サービスUUID:", config.serviceUUIDs);
@@ -299,41 +300,41 @@ export const useBLE = ({
                   clearTimeout(scanTimeoutRef.current);
                 }
                 setScanStatus("デバイス発見");
-                connectToDevice(deviceInfo);
+
+                setTimeout(() => {
+                  connectToDevice(deviceInfo);
+                }, 1000);
                 return;
               }
             }
 
             // サービスUUIDでの判定も追加（オプション）
             if (
-              config.serviceUUIDs &&
-              config.serviceUUIDs.length > 0 &&
-              device.serviceUUIDs
+              device.serviceUUIDs &&
+              device.serviceUUIDs.some(
+                (uuid) =>
+                  uuid.toLowerCase() === "0000180a-0000-1000-8000-00805f9b34fb"
+              )
             ) {
-              const hasTargetService = config.serviceUUIDs.some((targetUUID) =>
-                device.serviceUUIDs?.some(
-                  (deviceUUID) =>
-                    deviceUUID.toLowerCase() === targetUUID.toLowerCase()
-                )
+              console.log(
+                "🎯 0000180a-0000-1000-8000-00805f9b34fbサービスUUIDで自動接続"
               );
-
-              if (hasTargetService) {
-                console.log("🎯 サービスUUIDでターゲットデバイス発見");
-                const deviceInfo: Device = {
-                  id: device.id,
-                  name: deviceName || "Unknown Device",
-                  rssi: device.rssi || undefined,
-                  serviceUUIDs: device.serviceUUIDs || undefined,
-                };
-
-                bleManager.stopDeviceScan();
-                if (scanTimeoutRef.current) {
-                  clearTimeout(scanTimeoutRef.current);
-                }
-                setScanStatus("デバイス発見");
-                connectToDevice(deviceInfo);
-                return;
+              const deviceInfo: Device = {
+                id: device.id,
+                name: deviceName || "Unknown Device",
+                rssi: device.rssi || undefined,
+                serviceUUIDs: device.serviceUUIDs || undefined,
+              };
+              bleManager.stopDeviceScan();
+              if (scanTimeoutRef.current) {
+                clearTimeout(scanTimeoutRef.current);
               }
+              setScanStatus("デバイス発見");
+
+              setTimeout(() => {
+                connectToDevice(deviceInfo);
+              }, 1000);
+              return;
             }
           }
         }
