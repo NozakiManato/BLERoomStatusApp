@@ -107,7 +107,7 @@ const App: React.FC = () => {
       <PaperProvider>
         <SafeAreaView style={{ flex: 1 }}>
           <Appbar.Header>
-            <Appbar.Content title="BLE Room Status" />
+            <Appbar.Content title="BLE Room Status version1.0.16" />
             <Appbar.Action icon="cog" onPress={() => setShowSettings(true)} />
           </Appbar.Header>
           <ScrollView style={styles.container}>
