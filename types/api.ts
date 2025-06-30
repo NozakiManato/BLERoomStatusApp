@@ -1,9 +1,5 @@
 export interface RoomStatusAPI {
   userId: string;
-  timestamp: string;
-  deviceId?: string | undefined;
-  deviceName?: string | undefined;
-  rssi?: number | undefined;
 }
 
 export interface APIResponse {
