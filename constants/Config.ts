@@ -8,7 +8,7 @@ export interface AppConfig {
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
-  serviceUUIDs: ["27ADC9CA-35EB-465A-9154-B8FF9076F3E8"],
+  serviceUUIDs: ["0000180a-0000-1000-8000-00805f9b34fb"],
   targetDeviceName: "LINBLE-Z2",
   apiBaseURL: "https://www.kyutech-4lab.com/localabo/attendance",
   userId: "",
@@ -25,7 +25,7 @@ export const BLE_CONSTANTS = {
 } as const;
 
 export const API_ENDPOINTS = {
-  ENTER_ROOM: "/room/enter",
-  EXIT_ROOM: "/room/exit",
+  ENTER_ROOM: "/enter",
+  EXIT_ROOM: "/exit",
   HEALTH_CHECK: "/health",
 } as const;
