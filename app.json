@@ -12,9 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kyutech4lab.bleroomstatus",
@@ -62,17 +60,14 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.ico"
+      "favicon": "./assets/ble_icon.png"
     },
     "plugins": [
       [
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": [
-            "peripheral",
-            "central"
-          ],
+          "modes": ["peripheral", "central"],
           "bluetoothAlwaysPermission": "このアプリはビーコンとの通信にBluetoothを使用します。"
         }
       ],

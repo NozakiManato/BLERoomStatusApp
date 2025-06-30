@@ -44,6 +44,9 @@ export const useBLE = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const stateSubscriptionRef = useRef<Subscription | null>(null);
   const discoveredDevicesRef = useRef<Device[]>([]);
+  // ★ 追加: 切断リスナーと接続試行中のフラグを管理するref
+  const disconnectSubscriptionRef = useRef<Subscription | null>(null);
+  const isConnectingRef = useRef(false);
 
   useEffect(() => {
     if (permissionsGranted) {
@@ -53,18 +56,25 @@ export const useBLE = ({
   }, [permissionsGranted]);
 
   useEffect(() => {
-    // 前回接続デバイスIDを取得
     (async () => {
       const savedId = await AsyncStorage.getItem("lastConnectedDeviceId");
       if (savedId) setLastConnectedDeviceId(savedId);
     })();
   }, []);
 
+  // ★ 修正: cleanup関数を強化
   const cleanup = useCallback(() => {
     if (scanTimeoutRef.current) clearTimeout(scanTimeoutRef.current);
     if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
     if (stateSubscriptionRef.current) stateSubscriptionRef.current.remove();
+    // ★ 切断リスナーも確実に解除
+    if (disconnectSubscriptionRef.current) {
+      disconnectSubscriptionRef.current.remove();
+      disconnectSubscriptionRef.current = null;
+    }
     bleManager.stopDeviceScan();
+    isConnectingRef.current = false; // ★ 接続フラグをリセット
+    console.log("🧹 クリーンアップ完了");
   }, [bleManager]);
 
   const waitForBluetoothOn = async (): Promise<State> => {
@@ -160,11 +170,31 @@ export const useBLE = ({
 
   const connectToDevice = useCallback(
     async (device: Device): Promise<void> => {
-      try {
-        console.log("🔗 デバイス接続開始:", device.name);
-        setConnectionStatus("接続試行中");
+      // ★ すでに接続処理が進行中か、接続済みの場合は処理を中断
+      if (isConnectingRef.current || isConnected) {
+        console.log(
+          "ℹ️ 接続処理が進行中か、すでに接続済みのためスキップします。"
+        );
+        return;
+      }
 
-        const bleDevice = await bleManager.connectToDevice(device.id);
+      isConnectingRef.current = true; // ★ 接続試行開始のフラグを立てる
+      setConnectionStatus("接続試行中");
+      console.log("🔗 デバイス接続開始:", device.name);
+
+      // ★ 以前の切断リスナーが残っていれば解除
+      if (disconnectSubscriptionRef.current) {
+        disconnectSubscriptionRef.current.remove();
+        disconnectSubscriptionRef.current = null;
+      }
+
+      try {
+        const bleDevice = await bleManager.connectToDevice(device.id, {
+          // ★ タイムアウトを設定
+          timeout: BLE_CONSTANTS.CONNECTION_TIMEOUT,
+        });
+
+        isConnectingRef.current = false; // ★ 接続成功したのでフラグを下ろす
         console.log("✅ デバイス接続成功:", device.name);
 
         const connectedDeviceInfo: ConnectedDevice = {
@@ -177,39 +207,66 @@ export const useBLE = ({
         setIsConnected(true);
         setConnectionStatus("接続中");
 
-        // 接続したデバイスIDを保存
         await AsyncStorage.setItem("lastConnectedDeviceId", device.id);
         setLastConnectedDeviceId(device.id);
-
         await sendEnterRoomAPI(connectedDeviceInfo);
 
-        bleDevice.onDisconnected(() => {
-          console.log("🔌 デバイス切断:", device.name);
-          setIsConnected(false);
-          setConnectedDevice(null);
-          setConnectionStatus("未接続");
-          sendExitRoomAPI(connectedDeviceInfo);
+        // ★ 切断リスナーを登録し、その購読をrefに保存
+        disconnectSubscriptionRef.current = bleDevice.onDisconnected(
+          (error) => {
+            console.log("🔌 デバイス切断:", device.name, "エラー:", error);
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (permissionsGranted) {
-              console.log("🔄 切断後の自動スキャン開始");
-              startScanning();
+            // このコールバックは手動切断でも呼ばれるため、現在の接続状態を見て判断する
+            if (!isConnected) {
+              console.log(
+                "ℹ️ すでに切断処理済みのため、重複処理は行いません。"
+              );
+              return;
             }
-          }, BLE_CONSTANTS.RECONNECT_DELAY);
-        });
+
+            setIsConnected(false);
+            setConnectedDevice(null);
+            setConnectionStatus("未接続");
+            sendExitRoomAPI(connectedDeviceInfo);
+
+            if (disconnectSubscriptionRef.current) {
+              disconnectSubscriptionRef.current.remove();
+              disconnectSubscriptionRef.current = null;
+            }
+
+            // 意図しない切断の場合のみ再スキャンを試みる
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (permissionsGranted) {
+                console.log("🔄 切断後の自動スキャン開始");
+                startScanning();
+              }
+            }, BLE_CONSTANTS.RECONNECT_DELAY);
+          }
+        );
       } catch (error) {
         console.error("❌ 接続エラー:", error);
+        isConnectingRef.current = false; // ★ 接続失敗したのでフラグを下ろす
         setConnectionStatus("エラー");
 
+        // ★ エラー後の再試行ロジックを修正
+        // UIが固まるのを防ぐため、少し長めの待機時間を設ける
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (permissionsGranted) {
+          if (permissionsGranted && !isConnected) {
             console.log("🔄 接続失敗後の自動スキャン開始");
+            setConnectionStatus("未接続"); // UIの状態をリセット
             startScanning();
           }
-        }, BLE_CONSTANTS.RECONNECT_DELAY);
+        }, BLE_CONSTANTS.RECONNECT_DELAY + 2000); // 通常より少し長めのディレイ
       }
     },
-    [bleManager, sendEnterRoomAPI, sendExitRoomAPI, permissionsGranted]
+    // ★ 依存配列を更新 (startScanning は相互依存を避けるためここでは含めず、ロジックで制御)
+    [
+      bleManager,
+      sendEnterRoomAPI,
+      sendExitRoomAPI,
+      permissionsGranted,
+      isConnected,
+    ]
   );
 
   const startScanning = useCallback(async () => {
