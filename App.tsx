@@ -156,6 +156,7 @@ const App: React.FC = () => {
                     <Text style={{ fontSize: 15 }}>
                       {device.name || "(名称なし)"} ({device.id}){" "}
                       {device.rssi !== undefined ? `RSSI: ${device.rssi}` : ""}
+                      `UUID: {device.serviceUUIDs || "(UUIDなし)"}`
                     </Text>
                   </TouchableOpacity>
                 ))}

@@ -43,6 +43,7 @@ export const useBLE = ({
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const stateSubscriptionRef = useRef<Subscription | null>(null);
+  const discoveredDevicesRef = useRef<Device[]>([]);
 
   useEffect(() => {
     if (permissionsGranted) {
@@ -237,7 +238,9 @@ export const useBLE = ({
       }
 
       bleManager.startDeviceScan(
-        null, // 最初はnullでテスト - すべてのデバイスをスキャン
+        config.serviceUUIDs && config.serviceUUIDs.length > 0
+          ? config.serviceUUIDs
+          : ["0000180a-0000-1000-8000-00805f9b34fb"],
         { allowDuplicates: false },
         (error, device: BLEDevice | null) => {
           if (error) {
@@ -272,10 +275,12 @@ export const useBLE = ({
                 serviceUUIDs: device.serviceUUIDs || undefined,
               };
 
-              setDiscoveredDevices((prev) => {
-                const exists = prev.find((d) => d.id === device.id);
-                return exists ? prev : [...prev, deviceInfo];
-              });
+              const exists = discoveredDevicesRef.current.find(
+                (d) => d.id === device.id
+              );
+              if (!exists) {
+                discoveredDevicesRef.current.push(deviceInfo);
+              }
 
               // ターゲットデバイスの判定（完全一致 + 部分一致）
               const isTargetDevice =
@@ -450,6 +455,14 @@ export const useBLE = ({
       }
     }
   }, [scanStatus, lastConnectedDeviceId, discoveredDevices, connectToDevice]);
+
+  // 5秒ごとにまとめてsetState
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDiscoveredDevices([...discoveredDevicesRef.current]);
+    }, 5000); // 5秒ごと
+    return () => clearInterval(interval);
+  }, []);
 
   return {
     isConnected,
