@@ -10,7 +10,7 @@ export interface AppConfig {
 export const DEFAULT_CONFIG: AppConfig = {
   serviceUUIDs: ["0000180a-0000-1000-8000-00805f9b34fb"],
   targetDeviceName: "LINBLE-Z2",
-  apiBaseURL: "https://www.kyutech-4lab.jp/localabo/attendance",
+  apiBaseURL: "https://www.kyutech-4lab.jp/api/attendance",
   userId: "",
   scanTimeout: 10000,
   reconnectDelay: 2000,
