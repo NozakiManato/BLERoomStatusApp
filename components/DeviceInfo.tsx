@@ -27,6 +27,22 @@ export const DeviceInfo: React.FC<DeviceInfoProps> = ({ device }) => {
     return "非常に弱い";
   };
 
+  if (!device.isConnected) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>📱 接続デバイス情報</Text>
+        <View style={styles.deviceContainer}>
+          <Text style={[styles.deviceName, { color: "#F44336" }]}>未接続</Text>
+          <View style={styles.statusIndicator}>
+            <Text style={[styles.statusText, { color: "#F44336" }]}>
+              ❌ 切断されました
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>📱 接続デバイス情報</Text>

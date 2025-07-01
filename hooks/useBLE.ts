@@ -215,6 +215,10 @@ export const useBLE = ({
               const updatedDevice = await bleManager.connectedDevices([
                 device.id,
               ]);
+              // サービス・キャラクタリスティックを発見
+              await bleDevice.discoverAllServicesAndCharacteristics();
+              // スキャンを停止
+              bleManager.stopDeviceScan();
               if (updatedDevice && updatedDevice.length > 0) {
                 const dev = updatedDevice[0];
                 if (typeof dev.rssi === "number") {
