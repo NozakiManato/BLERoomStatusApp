@@ -33,8 +33,8 @@ export class ApiService {
       } else {
         console.error(`API Error (${endpoint}):`, response.status, result);
         return {
-          success: true,
-          data: result,
+          success: false,
+          message: result?.message || `API Error: ${response.status}`,
         };
       }
     } catch (error) {

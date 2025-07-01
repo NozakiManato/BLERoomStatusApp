@@ -107,7 +107,7 @@ const App: React.FC = () => {
       <PaperProvider>
         <SafeAreaView style={{ flex: 1 }}>
           <Appbar.Header>
-            <Appbar.Content title="BLE Room Status version1.0.16" />
+            <Appbar.Content title="BLE Room Status1.0.17" />
             <Appbar.Action icon="cog" onPress={() => setShowSettings(true)} />
           </Appbar.Header>
           <ScrollView style={styles.container}>
@@ -129,9 +129,8 @@ const App: React.FC = () => {
               color={getStatusColor(scanStatus)}
               icon="bluetooth-searching"
             />
-
-            {/* スキャンで見つかったBLEデバイス一覧 */}
-            {discoveredDevices.length > 0 && (
+            スキャンで見つかったBLEデバイス一覧
+            {/* {discoveredDevices.length > 0 && (
               <View
                 style={{
                   backgroundColor: "#fff",
@@ -161,8 +160,7 @@ const App: React.FC = () => {
                   </TouchableOpacity>
                 ))}
               </View>
-            )}
-
+            )} */}
             {/* 接続・切断ボタン */}
             <View style={{ marginBottom: 20 }}>
               {isConnected ? (
@@ -183,7 +181,6 @@ const App: React.FC = () => {
                 </Button>
               )}
             </View>
-
             {connectedDevice && <DeviceInfo device={connectedDevice} />}
           </ScrollView>
         </SafeAreaView>
