@@ -206,6 +206,50 @@ export const useBLE = ({
         setLastConnectedDeviceId(device.id);
         await sendEnterRoomAPI();
 
+        // ★ 追加: 距離による自動切断監視タイマー
+        let rssiMonitorInterval: NodeJS.Timeout | null = null;
+        const startRssiMonitor = () => {
+          if (rssiMonitorInterval) clearInterval(rssiMonitorInterval);
+          rssiMonitorInterval = setInterval(async () => {
+            try {
+              const updatedDevice = await bleManager.connectedDevices([
+                device.id,
+              ]);
+              if (updatedDevice && updatedDevice.length > 0) {
+                const dev = updatedDevice[0];
+                if (typeof dev.rssi === "number") {
+                  console.log("📶 RSSI監視:", dev.rssi);
+                  if (dev.rssi < BLE_CONSTANTS.RSSI_THRESHOLD) {
+                    console.warn(
+                      "⚠️ RSSIがしきい値を下回ったため自動切断:",
+                      dev.rssi
+                    );
+                    if (rssiMonitorInterval) clearInterval(rssiMonitorInterval);
+                    await disconnect(); // 既存のdisconnect関数を利用
+                  }
+                } else {
+                  // RSSI取得できない場合も切断（オプション）
+                  console.warn(
+                    "⚠️ RSSI値が取得できませんでした。自動切断します。"
+                  );
+                  if (rssiMonitorInterval) clearInterval(rssiMonitorInterval);
+                  await disconnect();
+                }
+              } else {
+                // デバイスが見つからない場合も切断
+                console.warn("⚠️ デバイスが見つかりません。自動切断します。");
+                if (rssiMonitorInterval) clearInterval(rssiMonitorInterval);
+                await disconnect();
+              }
+            } catch (e) {
+              console.error("❌ RSSI監視中にエラー:", e);
+              if (rssiMonitorInterval) clearInterval(rssiMonitorInterval);
+              await disconnect();
+            }
+          }, 3000); // 3秒ごとにRSSI監視
+        };
+        startRssiMonitor();
+
         // ★ 切断リスナーを登録し、その購読をrefに保存
         disconnectSubscriptionRef.current = bleDevice.onDisconnected(
           (error) => {

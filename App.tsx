@@ -3,14 +3,7 @@ import { DEFAULT_CONFIG } from "./constants";
 import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { Appbar, Button, Provider as PaperProvider } from "react-native-paper";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -34,8 +27,6 @@ const App: React.FC = () => {
     scanStatus,
     startScanning,
     disconnect,
-    discoveredDevices,
-    connectToDevice,
   } = useBLE({ config, permissionsGranted, bleManager });
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
