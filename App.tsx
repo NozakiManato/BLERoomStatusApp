@@ -4,7 +4,14 @@ import { useBLE, usePermissions } from "./hooks";
 import { RoomStatus } from "./types";
 import { DeviceInfo, PermissionScreen, StatusCard } from "./components";
 import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Provider as PaperProvider } from "react-native-paper";
+import {
+  Appbar,
+  Button,
+  Provider as PaperProvider,
+  TextInput,
+  Dialog,
+  Portal,
+} from "react-native-paper";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,6 +20,10 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [config, setConfig] = useState(() => DEFAULT_CONFIG);
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
+  const [showConnectionDialog, setShowConnectionDialog] = useState(false);
+  const [targetDeviceName, setTargetDeviceName] = useState("");
+  const [serviceUUID, setServiceUUID] = useState("");
+
   const {
     permissionsGranted,
     isLoading,
@@ -20,14 +31,14 @@ const App: React.FC = () => {
     checkPermissions,
     bleManager,
   } = usePermissions();
+
   const {
     isConnected,
-    connectedDevice,
+    connectedDeviceInfo,
     connectionStatus,
-    scanStatus,
-    startScanning,
+    findAndConnect,
     disconnect,
-  } = useBLE({ config, permissionsGranted, bleManager });
+  } = useBLE({ permissionsGranted, bleManager });
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
 
@@ -57,6 +68,29 @@ const App: React.FC = () => {
     setShowSettings(false);
   };
 
+  const handleConnectPress = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      setShowConnectionDialog(true);
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!targetDeviceName.trim() || !serviceUUID.trim()) {
+      return;
+    }
+
+    try {
+      await findAndConnect(targetDeviceName.trim(), serviceUUID.trim());
+      setShowConnectionDialog(false);
+      setTargetDeviceName("");
+      setServiceUUID("");
+    } catch (error) {
+      console.error("接続エラー:", error);
+    }
+  };
+
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "接続中":
@@ -69,6 +103,8 @@ const App: React.FC = () => {
         return "#FF9800";
       case "スキャン中":
         return "#2196F3";
+      case "デバイス発見":
+        return "#9C27B0";
       case "エラー":
         return "#F44336";
       default:
@@ -84,7 +120,6 @@ const App: React.FC = () => {
         onCheckPermissions={checkPermissions}
         permissionsGranted={permissionsGranted}
         connectionStatus={connectionStatus}
-        scanStatus={scanStatus}
       />
     );
   }
@@ -116,63 +151,80 @@ const App: React.FC = () => {
             />
             <StatusCard
               label="スキャン状態"
-              value={scanStatus}
-              color={getStatusColor(scanStatus)}
+              value={
+                connectionStatus === "スキャン中" ? "スキャン中" : "待機中"
+              }
+              color={getStatusColor(
+                connectionStatus === "スキャン中" ? "スキャン中" : "未接続"
+              )}
               icon="bluetooth-searching"
             />
-            スキャンで見つかったBLEデバイス一覧
-            {/* {discoveredDevices.length > 0 && (
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 8,
-                  padding: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <Text style={{ fontWeight: "bold", marginBottom: 8 }}>
-                  検出デバイス一覧
-                </Text>
-                {discoveredDevices.map((device) => (
-                  <TouchableOpacity
-                    key={device.id}
-                    style={{
-                      paddingVertical: 8,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
-                    }}
-                    onPress={() => connectToDevice(device)}
-                  >
-                    <Text style={{ fontSize: 15 }}>
-                      {device.name || "(名称なし)"} ({device.id}){" "}
-                      {device.rssi !== undefined ? `RSSI: ${device.rssi}` : ""}
-                      `UUID: {device.serviceUUIDs || "(UUIDなし)"}`
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )} */}
+
             {/* 接続・切断ボタン */}
             <View style={{ marginBottom: 20 }}>
-              {isConnected ? (
-                <Button
-                  mode="contained"
-                  onPress={disconnect}
-                  style={styles.button}
-                >
-                  切断
-                </Button>
-              ) : (
-                <Button
-                  mode="contained"
-                  onPress={startScanning}
-                  style={styles.button}
-                >
-                  接続
-                </Button>
-              )}
+              <Button
+                mode="contained"
+                onPress={handleConnectPress}
+                style={styles.button}
+                disabled={
+                  connectionStatus === "スキャン中" ||
+                  connectionStatus === "接続中"
+                }
+              >
+                {isConnected ? "切断" : "接続"}
+              </Button>
             </View>
-            {connectedDevice && <DeviceInfo device={connectedDevice} />}
+
+            {connectedDeviceInfo && (
+              <DeviceInfo
+                device={{
+                  id: connectedDeviceInfo.device.id,
+                  name: connectedDeviceInfo.device.name || "名称不明",
+                  connectionTime: new Date(connectedDeviceInfo.connectionTime),
+                  rssi: connectedDeviceInfo.rssi,
+                  serviceUUIDs: connectedDeviceInfo.device.serviceUUIDs || [],
+                  isConnected,
+                }}
+              />
+            )}
+
+            {/* 接続ダイアログ */}
+            <Portal>
+              <Dialog
+                visible={showConnectionDialog}
+                onDismiss={() => setShowConnectionDialog(false)}
+              >
+                <Dialog.Title>デバイスに接続</Dialog.Title>
+                <Dialog.Content>
+                  <TextInput
+                    label="デバイス名"
+                    value={targetDeviceName}
+                    onChangeText={setTargetDeviceName}
+                    mode="outlined"
+                    style={{ marginBottom: 16 }}
+                    placeholder="例: MyBLEDevice"
+                  />
+                  <TextInput
+                    label="サービスUUID"
+                    value={serviceUUID}
+                    onChangeText={setServiceUUID}
+                    mode="outlined"
+                    placeholder="例: 0000180F-0000-1000-8000-00805F9B34FB"
+                  />
+                </Dialog.Content>
+                <Dialog.Actions>
+                  <Button onPress={() => setShowConnectionDialog(false)}>
+                    キャンセル
+                  </Button>
+                  <Button
+                    onPress={handleConnect}
+                    disabled={!targetDeviceName.trim() || !serviceUUID.trim()}
+                  >
+                    接続
+                  </Button>
+                </Dialog.Actions>
+              </Dialog>
+            </Portal>
           </ScrollView>
         </SafeAreaView>
       </PaperProvider>

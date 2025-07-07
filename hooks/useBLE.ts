@@ -23,6 +23,13 @@ type ConnectionStatus =
   | "スキャン中"
   | "デバイス発見";
 
+// ★ 接続時刻を含む拡張デバイス情報の型を定義
+interface ConnectedDeviceInfo {
+  device: BLEDevice;
+  connectionTime: string;
+  rssi?: number;
+}
+
 // ★ フックのプロパティの型を定義
 interface UseBLEProps {
   permissionsGranted: boolean;
@@ -33,6 +40,7 @@ interface UseBLEProps {
 interface UseBLEReturn {
   isConnected: boolean;
   connectedDevice: BLEDevice | null;
+  connectedDeviceInfo: ConnectedDeviceInfo | null;
   connectionStatus: ConnectionStatus;
   findAndConnect: (
     targetDeviceName: string,
@@ -51,6 +59,8 @@ export const useBLE = ({
   const [connectedDevice, setConnectedDevice] = useState<BLEDevice | null>(
     null
   );
+  const [connectedDeviceInfo, setConnectedDeviceInfo] =
+    useState<ConnectedDeviceInfo | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("未接続");
 
@@ -86,6 +96,74 @@ export const useBLE = ({
     };
   }, [permissionsGranted, bleManager]);
 
+  // ★ アプリ起動時に前回の接続情報を復元する処理を追加
+  useEffect(() => {
+    const restoreConnectionInfo = async () => {
+      if (!permissionsGranted) return;
+
+      try {
+        const lastDeviceId = await AsyncStorage.getItem(
+          "lastConnectedDeviceId"
+        );
+        const lastConnectionTime = await AsyncStorage.getItem(
+          "lastConnectionTime"
+        );
+
+        if (lastDeviceId && lastConnectionTime) {
+          // デバイスが実際に接続されているかチェック
+          const isDeviceConnected = await bleManager.isDeviceConnected(
+            lastDeviceId
+          );
+
+          if (isDeviceConnected) {
+            // 接続されている場合は状態を復元
+            const connectedDevices = await bleManager.connectedDevices([]);
+            const device = connectedDevices.find((d) => d.id === lastDeviceId);
+
+            if (device) {
+              setIsConnected(true);
+              setConnectedDevice(device);
+              if (typeof device.rssi === "number") {
+                setConnectedDeviceInfo({
+                  device,
+                  connectionTime: lastConnectionTime,
+                  rssi: device.rssi,
+                });
+              } else {
+                setConnectedDeviceInfo({
+                  device,
+                  connectionTime: lastConnectionTime,
+                });
+              }
+              setConnectionStatus("接続中");
+
+              console.log(
+                `🔄 Restored connection to ${device.name} (connected at ${lastConnectionTime})`
+              );
+
+              // 切断監視を再設定
+              disconnectSubscriptionRef.current = device.onDisconnected(() => {
+                setIsConnected(false);
+                setConnectedDevice(null);
+                setConnectedDeviceInfo(null);
+                setConnectionStatus("未接続");
+                console.log("🔌 Foreground: Device disconnected.");
+              });
+            }
+          } else {
+            // 接続されていない場合は保存された情報をクリア
+            await AsyncStorage.removeItem("lastConnectedDeviceId");
+            await AsyncStorage.removeItem("lastConnectionTime");
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error restoring connection info:", error);
+      }
+    };
+
+    restoreConnectionInfo();
+  }, [permissionsGranted, bleManager]);
+
   // ★ 汎用的な接続関数 (手動接続用)
   const findAndConnect = useCallback(
     // ★ 関数のパラメータと戻り値の型を明記
@@ -108,16 +186,32 @@ export const useBLE = ({
 
             try {
               const connected = await device.connect();
+              const connectionTime = new Date().toISOString();
+
               setConnectionStatus("接続中");
               setIsConnected(true);
               setConnectedDevice(connected);
+
+              // ★ 接続時刻を含む詳細情報を設定
+              const deviceInfo: ConnectedDeviceInfo =
+                typeof device.rssi === "number"
+                  ? { device: connected, connectionTime, rssi: device.rssi }
+                  : { device: connected, connectionTime };
+              setConnectedDeviceInfo(deviceInfo);
+
               await AsyncStorage.setItem("lastConnectedDeviceId", connected.id);
+              await AsyncStorage.setItem("lastConnectionTime", connectionTime);
+
+              console.log(
+                `✅ Connected to ${connected.name} at ${connectionTime}`
+              );
 
               // フォアグラウンドでの切断を監視
               disconnectSubscriptionRef.current = connected.onDisconnected(
                 () => {
                   setIsConnected(false);
                   setConnectedDevice(null);
+                  setConnectedDeviceInfo(null);
                   setConnectionStatus("未接続");
                   console.log("🔌 Foreground: Device disconnected.");
                 }
@@ -141,7 +235,13 @@ export const useBLE = ({
         // UIの状態を即時更新
         setIsConnected(false);
         setConnectedDevice(null);
+        setConnectedDeviceInfo(null);
         setConnectionStatus("未接続");
+
+        // AsyncStorageからも削除
+        await AsyncStorage.removeItem("lastConnectionTime");
+
+        console.log("🔌 Device disconnected manually");
       } catch (error: any) {
         console.error("❌ Disconnect error:", error);
       }
@@ -151,6 +251,7 @@ export const useBLE = ({
   return {
     isConnected,
     connectedDevice,
+    connectedDeviceInfo,
     connectionStatus,
     findAndConnect,
     disconnect,

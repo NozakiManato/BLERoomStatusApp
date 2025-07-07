@@ -16,15 +16,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   reconnectDelay: 2000,
 };
 
-export const BLE_CONSTANTS = {
-  SCAN_TIMEOUT: 20000,
-  RECONNECT_DELAY: 3000,
-  MAX_RETRY_ATTEMPTS: 3,
-  API_RETRY_DELAY: 2000,
-  RSSI_THRESHOLD: -100,
-  CONNECTION_TIMEOUT: 15000,
-} as const;
-
 export const API_ENDPOINTS = {
   ENTER_ROOM: "/enter",
   EXIT_ROOM: "/exit",
