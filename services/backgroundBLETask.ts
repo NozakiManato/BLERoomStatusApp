@@ -1,13 +1,13 @@
 import * as TaskManager from "expo-task-manager";
 import * as BackgroundFetch from "expo-background-fetch";
-import { BleManager, Device, BleError } from "react-native-ble-plx";
+import { Device, BleError } from "react-native-ble-plx";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiService } from "./ApiServices";
 import { DEFAULT_CONFIG } from "../constants";
+import bleManager from "./bleManagerSingleton";
 
 export const BACKGROUND_BLE_TASK: string = "background-ble-task";
 
-const bleManager: BleManager = new BleManager();
 const apiService: ApiService = new ApiService(DEFAULT_CONFIG.apiBaseURL);
 
 let connectedDeviceId: string | null = null;

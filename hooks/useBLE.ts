@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 // ★ react-native-ble-plx からクラスと型をインポート
 import {
-  BleManager,
   Device as BLEDevice, // ★ 型として使うためにエイリアスを設定
   State,
   Subscription,
@@ -14,6 +13,7 @@ import {
   registerBackgroundBLETask,
   unregisterBackgroundBLETask,
 } from "../services/backgroundBLETask";
+import bleManager from "../services/bleManagerSingleton";
 
 // ★ 接続状態を表す型エイリアスを定義
 type ConnectionStatus =
@@ -33,7 +33,6 @@ interface ConnectedDeviceInfo {
 // ★ フックのプロパティの型を定義
 interface UseBLEProps {
   permissionsGranted: boolean;
-  bleManager: BleManager;
 }
 
 // ★ フックが返す値の型を定義
@@ -49,10 +48,7 @@ interface UseBLEReturn {
   disconnect: () => Promise<void>;
 }
 
-export const useBLE = ({
-  permissionsGranted,
-  bleManager,
-}: UseBLEProps): UseBLEReturn => {
+export const useBLE = ({ permissionsGranted }: UseBLEProps): UseBLEReturn => {
   // ★ フックのプロパティと戻り値に型を適用
   // ★ useState にジェネリクスで型を指定
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -94,7 +90,7 @@ export const useBLE = ({
         disconnectSubscriptionRef.current.remove();
       }
     };
-  }, [permissionsGranted, bleManager]);
+  }, [permissionsGranted]);
 
   // ★ アプリ起動時に前回の接続情報を復元する処理を追加
   useEffect(() => {
@@ -162,7 +158,7 @@ export const useBLE = ({
     };
 
     restoreConnectionInfo();
-  }, [permissionsGranted, bleManager]);
+  }, [permissionsGranted]);
 
   // ★ 汎用的な接続関数 (手動接続用)
   const findAndConnect = useCallback(
@@ -224,7 +220,7 @@ export const useBLE = ({
         }
       );
     },
-    [bleManager]
+    []
   );
 
   const disconnect = useCallback(async (): Promise<void> => {

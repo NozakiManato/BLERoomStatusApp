@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Alert, Linking, Platform } from "react-native";
-import { BleManager, State } from "react-native-ble-plx";
+import { State } from "react-native-ble-plx";
 import * as Location from "expo-location";
 import type { PermissionStatus } from "../types";
+import bleManager from "../services/bleManagerSingleton";
 
 export const usePermissions = () => {
   const [permissionsGranted, setPermissionsGranted] = useState<boolean>(false);
-  const [bleManager] = useState<BleManager>(new BleManager());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {

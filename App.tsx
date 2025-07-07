@@ -29,7 +29,6 @@ const App: React.FC = () => {
     isLoading,
     requestPermissions,
     checkPermissions,
-    bleManager,
   } = usePermissions();
 
   const {
@@ -38,7 +37,7 @@ const App: React.FC = () => {
     connectionStatus,
     findAndConnect,
     disconnect,
-  } = useBLE({ permissionsGranted, bleManager });
+  } = useBLE({ permissionsGranted });
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
 
