@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/kyutech_logo.jpg",
+      "image": "./assets/kyutech_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -33,7 +33,7 @@
       "version": "1.0.0",
       "icon": "./assets/ble_icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/kyutech_logo.jpg",
+        "foregroundImage": "./assets/kyutech_logo.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
