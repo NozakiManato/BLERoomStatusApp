@@ -7,19 +7,33 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
-
     "baseUrl": ".",
     "paths": {
-      "@/components/*": ["components/*"],
-      "@/hooks/*": ["hooks/*"],
-      "@/services/*": ["services/*"],
-      "@/types/*": ["types/*"],
-      "@/utils/*": ["utils/*"],
-      "@/constants/*": ["constants/*"]
+      "@/components/*": [
+        "components/*"
+      ],
+      "@/hooks/*": [
+        "hooks/*"
+      ],
+      "@/services/*": [
+        "services/*"
+      ],
+      "@/types/*": [
+        "types/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
+      ],
+      "@/constants/*": [
+        "constants/*"
+      ]
     }
   },
-
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
