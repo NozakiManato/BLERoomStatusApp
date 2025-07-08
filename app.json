@@ -24,7 +24,7 @@
         "NSBluetoothPeripheralUsageDescription": "このアプリはビーコンデバイスとの通信にBluetoothを使用します。",
         "NSLocationWhenInUseUsageDescription": "このアプリはBLEデバイスをスキャンするために位置情報を使用します。",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "このアプリはバックグラウンドでもBLEデバイスを監視するために位置情報を使用します。",
-        "UIBackgroundModes": ["bluetooth-central", "fetch"],
+        "UIBackgroundModes": ["bluetooth-central", "fetch", "location"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },

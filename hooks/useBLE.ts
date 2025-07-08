@@ -59,6 +59,7 @@ export const useBLE = ({ permissionsGranted }: UseBLEProps): UseBLEReturn => {
     useState<ConnectedDeviceInfo | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("未接続");
+  const [isBleReady, setIsBleReady] = useState<boolean>(false);
 
   // ★ useRef にジェネリクスで型を指定
   const disconnectSubscriptionRef = useRef<Subscription | null>(null);
@@ -67,22 +68,25 @@ export const useBLE = ({ permissionsGranted }: UseBLEProps): UseBLEReturn => {
     // ★ 権限がない場合はタスクを解除して、ここで処理を終了させる
     if (!permissionsGranted) {
       unregisterBackgroundBLETask();
-      return; // クリーンアップするものがないので、ここでリターン
+      setIsBleReady(false);
+      return;
     }
 
     // --- 以下は権限がある場合の処理 ---
     registerBackgroundBLETask();
 
-    // アプリがフォアグラウンドにある時のための状態監視
-    const stateSubscription = bleManager.onStateChange((state: State) => {
+    // BLEマネージャーの状態を監視
+    const stateSubscription = bleManager.onStateChange((state) => {
       if (state === State.PoweredOn) {
-        // フォアグラウンドでの初期スキャンなどが必要な場合はここに記述
+        setIsBleReady(true);
         console.log("Foreground: Bluetooth is on.");
+      } else {
+        setIsBleReady(false);
+        console.log(`Foreground: Bluetooth is ${state}`);
       }
     }, true);
 
     // ★ useEffectの最後にクリーンアップ関数をまとめて返す
-    // この部分は権限がある場合にのみ到達する
     return () => {
       console.log("Cleaning up BLE effect...");
       stateSubscription.remove();
@@ -95,8 +99,13 @@ export const useBLE = ({ permissionsGranted }: UseBLEProps): UseBLEReturn => {
   // ★ アプリ起動時に前回の接続情報を復元する処理を追加
   useEffect(() => {
     const restoreConnectionInfo = async () => {
-      if (!permissionsGranted) return;
+      // BLEの準備ができていなければ何もしない
+      if (!isBleReady) {
+        console.log("BLE is not ready, skipping connection restore.");
+        return;
+      }
 
+      console.log("Attempting to restore connection info...");
       try {
         const lastDeviceId = await AsyncStorage.getItem(
           "lastConnectedDeviceId"
@@ -158,7 +167,7 @@ export const useBLE = ({ permissionsGranted }: UseBLEProps): UseBLEReturn => {
     };
 
     restoreConnectionInfo();
-  }, [permissionsGranted]);
+  }, [isBleReady]);
 
   // ★ 汎用的な接続関数 (手動接続用)
   const findAndConnect = useCallback(
