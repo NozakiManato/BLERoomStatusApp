@@ -18,7 +18,6 @@ const App: React.FC = () => {
     isLoading,
     requestPermissions,
     checkPermissions,
-    bleManager,
   } = usePermissions();
   const {
     isConnected,
@@ -27,7 +26,7 @@ const App: React.FC = () => {
     scanStatus,
     startScanning,
     disconnect,
-  } = useBLE({ config, permissionsGranted, bleManager });
+  } = useBLE({ config, permissionsGranted });
 
   const roomStatus: RoomStatus = isConnected ? "在室中" : "退室中";
 
